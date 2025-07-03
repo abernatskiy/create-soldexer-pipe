@@ -1,0 +1,16 @@
+use anchor_lang::prelude::*;
+
+declare_id!("{{config.projectName}}");
+
+#[program]
+pub mod {{config.projectName}} {
+    use super::*;
+
+    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+        msg!("Initializing {{config.projectName}}");
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct Initialize {} 

@@ -1,0 +1,38 @@
+{
+  "name": "{{config.projectName}}",
+  "version": "1.0.0",
+  "description": "{{config.projectDescription}}",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf lib",
+    "test": "jest"{{#config.features.linting}},
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"{{/config.features.linting}}
+  },
+  "keywords": [
+    "solana",
+    "blockchain",
+    "{{config.projectType}}",
+    "{{config.framework}}"
+  ],
+  "author": "{{config.author}}",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.87.0"{{#config.framework.anchor}},
+    "@coral-xyz/anchor": "^0.29.0"{{/config.framework.anchor}}{{#config.framework.spl}},
+    "@solana/spl-token": "^0.3.9"{{/config.framework.spl}}
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"{{#config.features.testing}},
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.8"{{/config.features.testing}}{{#config.features.linting}},
+    "eslint": "^8.55.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "prettier": "^3.1.0"{{/config.features.linting}}
+  }
+} 

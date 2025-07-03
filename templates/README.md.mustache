@@ -1,0 +1,55 @@
+# {{config.projectName}}
+
+{{config.projectDescription}}
+
+## Project Type
+This is a **{{config.projectType}}** project built with **{{config.framework}}** framework targeting **{{config.network}}** network.
+
+## Features
+{{#config.features.testing}}- ✅ Testing setup{{/config.features.testing}}
+{{#config.features.documentation}}- ✅ Documentation{{/config.features.documentation}}
+{{#config.features.docker}}- ✅ Docker support{{/config.features.docker}}
+{{#config.features.ci}}- ✅ CI/CD pipeline{{/config.features.ci}}
+{{#config.features.linting}}- ✅ Linting and formatting{{/config.features.linting}}
+
+## Installation
+
+```bash
+npm install
+```
+
+## Development
+
+```bash
+# Build the project
+npm run build
+
+# Development mode with watch
+npm run dev
+
+# Run tests
+npm test{{#config.features.linting}}
+
+# Lint code
+npm run lint
+
+# Format code
+npm run format{{/config.features.linting}}
+```
+
+## Project Structure
+
+```
+src/
+├── index.ts          # Main entry point
+├── types.ts          # TypeScript type definitions
+└── utils.ts          # Utility functions
+```
+
+## Author
+
+{{config.author}}
+
+## License
+
+MIT 
