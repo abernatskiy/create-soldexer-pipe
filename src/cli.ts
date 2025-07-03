@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { runQuestionnaire, confirmGeneration } from './questions';
 import { TemplateManager } from './template-manager';
-import { ProjectConfig } from './types';
+import { SolanaPipeConfig } from './types';
 
 async function main(): Promise<void> {
   console.log(chalk.blue.bold('\n🚀 Welcome to create-soldexer-pipe!'));
@@ -13,7 +13,7 @@ async function main(): Promise<void> {
 
   try {
     // Run the dynamic questionnaire
-    const config: ProjectConfig = await runQuestionnaire();
+    const config: SolanaPipeConfig = await runQuestionnaire();
 
     // Show summary
     console.log(chalk.green.bold('\n📋 Project Configuration:'));

@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as mustache from 'mustache';
-import { TemplateData, ProjectConfig } from './types';
+import { TemplateData, SolanaPipeConfig } from './types';
 
 export class TemplateManager {
   private templatesDir: string;
@@ -10,7 +10,7 @@ export class TemplateManager {
     this.templatesDir = path.join(__dirname, '..', 'templates');
   }
 
-  async generateProject(config: ProjectConfig): Promise<void> {
+  async generateProject(config: SolanaPipeConfig): Promise<void> {
     const templateData: TemplateData = {
       config,
       currentYear: new Date().getFullYear(),
@@ -47,7 +47,7 @@ export class TemplateManager {
     }
   }
 
-  private async generateFrameworkFiles(config: ProjectConfig, data: TemplateData): Promise<void> {
+  private async generateFrameworkFiles(config: SolanaPipeConfig, data: TemplateData): Promise<void> {
     const framework = config.framework;
     
     switch (framework) {
@@ -70,7 +70,7 @@ export class TemplateManager {
     }
   }
 
-  private async generateFeatureFiles(config: ProjectConfig, data: TemplateData): Promise<void> {
+  private async generateFeatureFiles(config: SolanaPipeConfig, data: TemplateData): Promise<void> {
     const { features } = config;
 
     if (features.testing) {

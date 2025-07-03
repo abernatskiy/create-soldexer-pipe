@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { ProjectConfig, ProjectFeatures } from './types';
+import { SolanaPipeConfig, ProjectFeatures } from './types';
 
 interface QuestionContext {
   projectType?: string;
@@ -8,7 +8,7 @@ interface QuestionContext {
   features?: Partial<ProjectFeatures>;
 }
 
-async function askProjectDetails(): Promise<Partial<ProjectConfig>> {
+async function askProjectDetails(): Promise<Partial<SolanaPipeConfig>> {
   const answers = await inquirer.prompt([
     {
       type: 'input',
@@ -162,7 +162,7 @@ async function askFeatures(context: QuestionContext): Promise<ProjectFeatures> {
   return features;
 }
 
-async function askConfirmation(config: ProjectConfig): Promise<boolean> {
+async function askConfirmation(config: SolanaPipeConfig): Promise<boolean> {
   const { confirm } = await inquirer.prompt([
     {
       type: 'confirm',
@@ -175,7 +175,7 @@ async function askConfirmation(config: ProjectConfig): Promise<boolean> {
   return confirm;
 }
 
-export async function runQuestionnaire(): Promise<ProjectConfig> {
+export async function runQuestionnaire(): Promise<SolanaPipeConfig> {
   // Step 1: Get basic project details
   const projectDetails = await askProjectDetails();
   
@@ -197,7 +197,7 @@ export async function runQuestionnaire(): Promise<ProjectConfig> {
   const features = await askFeatures(context);
 
   // Build the complete config
-  const config: ProjectConfig = {
+  const config: SolanaPipeConfig = {
     projectName: projectDetails.projectName!,
     projectDescription: projectDetails.projectDescription!,
     author: projectDetails.author!,
@@ -210,6 +210,6 @@ export async function runQuestionnaire(): Promise<ProjectConfig> {
   return config;
 }
 
-export async function confirmGeneration(config: ProjectConfig): Promise<boolean> {
+export async function confirmGeneration(config: SolanaPipeConfig): Promise<boolean> {
   return await askConfirmation(config);
 } 

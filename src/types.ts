@@ -1,42 +1,17 @@
-export interface ProjectConfig {
+export interface SolanaPipeConfig {
   projectName: string;
   projectDescription: string;
   author: string;
-  projectType: ProjectType;
-  framework: Framework;
-  network: Network;
-  features: ProjectFeatures;
+  instructions: InstructionRequest[] | undefined;
+  tokenBalances: TokenBalanceRequest[] | undefined;
 }
 
-export enum ProjectType {
-  DEFI = 'defi',
-  NFT = 'nft',
-  GENERAL = 'general'
+export interface InstructionRequest {
+  programId: string[] | undefined;
+  discriminator: string[] | undefined;
 }
 
-export enum Framework {
-  ANCHOR = 'anchor',
-  NATIVE = 'native',
-  SPL = 'spl'
+export interface TokenBalanceRequest {
+  account: string[] | undefined;
+  mint: string[] | undefined;
 }
-
-export enum Network {
-  MAINNET = 'mainnet',
-  DEVNET = 'devnet',
-  TESTNET = 'testnet'
-}
-
-export interface ProjectFeatures {
-  testing: boolean;
-  documentation: boolean;
-  docker: boolean;
-  ci: boolean;
-  linting: boolean;
-}
-
-
-
-export interface TemplateData {
-  config: ProjectConfig;
-  [key: string]: any;
-} 
