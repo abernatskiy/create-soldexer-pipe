@@ -3,34 +3,17 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
-import { getQuestions } from './questions';
+import { runQuestionnaire, confirmGeneration } from './questions';
 import { TemplateManager } from './template-manager';
-import { ProjectConfig, ProjectFeatures } from './types';
+import { ProjectConfig } from './types';
 
 async function main(): Promise<void> {
   console.log(chalk.blue.bold('\n🚀 Welcome to create-soldexer-pipe!'));
   console.log(chalk.gray('Let\'s create your Solana project together.\n'));
 
   try {
-    // Get user answers
-    const answers = await inquirer.prompt(getQuestions());
-
-    // Transform answers to our config format
-    const config: ProjectConfig = {
-      projectName: answers.projectName,
-      projectDescription: answers.projectDescription,
-      author: answers.author,
-      projectType: answers.projectType,
-      framework: answers.framework,
-      network: answers.network,
-      features: {
-        testing: answers.features?.testing || false,
-        documentation: answers.features?.documentation || false,
-        docker: answers.features?.docker || false,
-        ci: answers.features?.ci || false,
-        linting: answers.features?.linting || false
-      }
-    };
+    // Run the dynamic questionnaire
+    const config: ProjectConfig = await runQuestionnaire();
 
     // Show summary
     console.log(chalk.green.bold('\n📋 Project Configuration:'));
@@ -46,14 +29,7 @@ async function main(): Promise<void> {
       .join(', ') || 'None'}`));
 
     // Confirm generation
-    const { confirm } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'confirm',
-        message: 'Proceed with project generation?',
-        default: true
-      }
-    ]);
+    const confirm = await confirmGeneration(config);
 
     if (!confirm) {
       console.log(chalk.yellow('Project generation cancelled.'));

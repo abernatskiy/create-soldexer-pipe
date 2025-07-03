@@ -34,14 +34,7 @@ export interface ProjectFeatures {
   linting: boolean;
 }
 
-export interface Question {
-  type: 'input' | 'confirm' | 'list' | 'checkbox';
-  name: string;
-  message: string;
-  choices?: string[] | ((answers: any) => Array<{ name: string; value: string }>);
-  default?: any;
-  when?: (answers: any) => boolean;
-}
+
 
 export interface TemplateData {
   config: ProjectConfig;
