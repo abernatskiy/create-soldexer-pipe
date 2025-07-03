@@ -16,17 +16,30 @@ async function main(): Promise<void> {
     const config: SolanaPipeConfig = await runQuestionnaire();
 
     // Show summary
-    console.log(chalk.green.bold('\n📋 Project Configuration:'));
+    console.log(chalk.green.bold('\n📋 Indexer Configuration:'));
     console.log(chalk.white(`  Project Name: ${config.projectName}`));
     console.log(chalk.white(`  Description: ${config.projectDescription}`));
     console.log(chalk.white(`  Author: ${config.author}`));
-    console.log(chalk.white(`  Type: ${config.projectType}`));
-    console.log(chalk.white(`  Framework: ${config.framework}`));
-    console.log(chalk.white(`  Network: ${config.network}`));
-    console.log(chalk.white(`  Features: ${Object.entries(config.features)
-      .filter(([, enabled]) => enabled)
-      .map(([feature]) => feature)
-      .join(', ') || 'None'}`));
+    
+    if (config.instructions && config.instructions.length > 0) {
+      console.log(chalk.white(`  Instructions to Index: ${config.instructions.length}`));
+      config.instructions.forEach((instruction, index) => {
+        console.log(chalk.gray(`    ${index + 1}. Program IDs: ${instruction.programId?.join(', ') || 'All'}`));
+        console.log(chalk.gray(`       Discriminators: ${instruction.discriminator?.join(', ') || 'All'}`));
+      });
+    } else {
+      console.log(chalk.white(`  Instructions to Index: None`));
+    }
+    
+    if (config.tokenBalances && config.tokenBalances.length > 0) {
+      console.log(chalk.white(`  Token Balances to Track: ${config.tokenBalances.length}`));
+      config.tokenBalances.forEach((balance, index) => {
+        console.log(chalk.gray(`    ${index + 1}. Accounts: ${balance.account?.join(', ') || 'All'}`));
+        console.log(chalk.gray(`       Mints: ${balance.mint?.join(', ') || 'All'}`));
+      });
+    } else {
+      console.log(chalk.white(`  Token Balances to Track: None`));
+    }
 
     // Confirm generation
     const confirm = await confirmGeneration(config);
@@ -36,29 +49,19 @@ async function main(): Promise<void> {
       process.exit(0);
     }
 
-    // Generate project
-    const spinner = ora('Generating your Solana project...').start();
+    // Generate project (disabled for now)
+    const spinner = ora('Processing your indexer configuration...').start();
     
-    const templateManager = new TemplateManager();
-    await templateManager.generateProject(config);
+    // TODO: Implement template generation
+    // const templateManager = new TemplateManager();
+    // await templateManager.generateProject(config);
     
-    spinner.succeed('Project generated successfully!');
+    spinner.succeed('Configuration processed successfully!');
 
     // Show next steps
-    console.log(chalk.green.bold('\n🎉 Your project is ready!'));
-    console.log(chalk.white('\nNext steps:'));
-    console.log(chalk.cyan(`  1. cd ${config.projectName}`));
-    console.log(chalk.cyan('  2. npm install'));
-    
-    if (config.framework === 'anchor') {
-      console.log(chalk.cyan('  3. anchor build'));
-      console.log(chalk.cyan('  4. anchor test'));
-    } else {
-      console.log(chalk.cyan('  3. npm run build'));
-      console.log(chalk.cyan('  4. npm test'));
-    }
-
-    console.log(chalk.gray('\nHappy coding! 🚀\n'));
+    console.log(chalk.green.bold('\n🎉 Your indexer configuration is ready!'));
+    console.log(chalk.white('\nConfiguration saved. Template generation will be implemented later.'));
+    console.log(chalk.gray('\nHappy indexing! 🚀\n'));
 
   } catch (error) {
     console.error(chalk.red.bold('\n❌ Error:'), error);

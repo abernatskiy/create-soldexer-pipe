@@ -1,26 +1,19 @@
 import inquirer from 'inquirer';
-import { SolanaPipeConfig, ProjectFeatures } from './types';
-
-interface QuestionContext {
-  projectType?: string;
-  framework?: string;
-  network?: string;
-  features?: Partial<ProjectFeatures>;
-}
+import { SolanaPipeConfig, InstructionRequest, TokenBalanceRequest } from './types';
 
 async function askProjectDetails(): Promise<Partial<SolanaPipeConfig>> {
   const answers = await inquirer.prompt([
     {
       type: 'input',
       name: 'projectName',
-      message: 'What is your project name?',
-      default: 'my-solana-project'
+      message: 'What is your indexer project name?',
+      default: 'my-solana-indexer'
     },
     {
       type: 'input',
       name: 'projectDescription',
-      message: 'Describe your project:',
-      default: 'A Solana blockchain project'
+      message: 'Describe your Solana indexer:',
+      default: 'A Solana blockchain indexer'
     },
     {
       type: 'input',
@@ -33,133 +26,140 @@ async function askProjectDetails(): Promise<Partial<SolanaPipeConfig>> {
   return answers;
 }
 
-async function askProjectType(): Promise<string> {
-  const { projectType } = await inquirer.prompt([
+async function askInstructionDetails(): Promise<InstructionRequest> {
+  const { programId } = await inquirer.prompt([
     {
-      type: 'list',
-      name: 'projectType',
-      message: 'What type of project are you building?',
-      choices: [
-        'DeFi (Decentralized Finance)',
-        'NFT (Non-Fungible Token)',
-        'General Solana Project'
-      ]
+      type: 'input',
+      name: 'programId',
+      message: 'Enter program IDs to index (comma-separated):',
+      default: '',
+      filter: (input: string) => input.split(',').map(id => id.trim()).filter(id => id.length > 0)
     }
   ]);
 
-  return projectType;
-}
-
-async function askFramework(projectType: string): Promise<string> {
-  const choices = [
-    { name: 'Anchor (Recommended for most projects)', value: 'anchor' },
-    { name: 'Native Solana (Low-level control)', value: 'native' }
-  ];
-  
-  // Add SPL option for DeFi projects
-  if (projectType === 'DeFi (Decentralized Finance)') {
-    choices.push({ name: 'SPL (Solana Program Library)', value: 'spl' });
-  }
-
-  const { framework } = await inquirer.prompt([
+  const { discriminator } = await inquirer.prompt([
     {
-      type: 'list',
-      name: 'framework',
-      message: 'Which framework would you like to use?',
-      choices
+      type: 'input',
+      name: 'discriminator',
+      message: 'Enter instruction discriminators to index (comma-separated, leave empty for all):',
+      default: '',
+      filter: (input: string) => input.split(',').map(d => d.trim()).filter(d => d.length > 0)
     }
   ]);
 
-  return framework;
-}
-
-async function askNetwork(): Promise<string> {
-  const { network } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'network',
-      message: 'Which network would you like to target?',
-      choices: [
-        'Devnet (Recommended for development)',
-        'Testnet (For testing)',
-        'Mainnet (Production - be careful!)'
-      ],
-      default: 'Devnet (Recommended for development)'
-    }
-  ]);
-
-  return network;
-}
-
-async function askFeatures(context: QuestionContext): Promise<ProjectFeatures> {
-  const features: ProjectFeatures = {
-    testing: false,
-    documentation: false,
-    docker: false,
-    ci: false,
-    linting: false
+  return {
+    programId: programId.length > 0 ? programId : undefined,
+    discriminator: discriminator.length > 0 ? discriminator : undefined
   };
+}
 
-  // Ask about testing
-  const { testing } = await inquirer.prompt([
+async function askInstructions(): Promise<InstructionRequest[]> {
+  const instructions: InstructionRequest[] = [];
+  
+  // Ask if user wants to index instructions
+  const { indexInstructions } = await inquirer.prompt([
     {
       type: 'confirm',
-      name: 'testing',
-      message: 'Would you like to include testing setup?',
+      name: 'indexInstructions',
+      message: 'Do you want to index instructions?',
       default: true
     }
   ]);
-  features.testing = testing;
 
-  // Ask about documentation
-  const { documentation } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'documentation',
-      message: 'Would you like to include documentation setup?',
-      default: true
-    }
-  ]);
-  features.documentation = documentation;
+  if (!indexInstructions) {
+    return [];
+  }
 
-  // Ask about Docker (only if not a simple project)
-  if (context.framework !== 'native') {
-    const { docker } = await inquirer.prompt([
+  let addMore = true;
+  let instructionCount = 1;
+
+  while (addMore) {
+    console.log(`\n📝 Instruction ${instructionCount}:`);
+    const instruction = await askInstructionDetails();
+    instructions.push(instruction);
+
+    const { continueAdding } = await inquirer.prompt([
       {
         type: 'confirm',
-        name: 'docker',
-        message: 'Would you like to include Docker configuration?',
+        name: 'continueAdding',
+        message: 'Do you want to add another instruction to index?',
         default: false
       }
     ]);
-    features.docker = docker;
+
+    addMore = continueAdding;
+    instructionCount++;
   }
 
-  // Ask about CI/CD (only for complex projects)
-  if (context.projectType === 'DeFi (Decentralized Finance)' || context.framework === 'anchor') {
-    const { ci } = await inquirer.prompt([
+  return instructions;
+}
+
+async function askTokenBalanceDetails(): Promise<TokenBalanceRequest> {
+  const { account } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'account',
+      message: 'Enter account addresses to track (comma-separated):',
+      default: '',
+      filter: (input: string) => input.split(',').map(acc => acc.trim()).filter(acc => acc.length > 0)
+    }
+  ]);
+
+  const { mint } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'mint',
+      message: 'Enter token mint addresses to track (comma-separated, leave empty for all):',
+      default: '',
+      filter: (input: string) => input.split(',').map(m => m.trim()).filter(m => m.length > 0)
+    }
+  ]);
+
+  return {
+    account: account.length > 0 ? account : undefined,
+    mint: mint.length > 0 ? mint : undefined
+  };
+}
+
+async function askTokenBalances(): Promise<TokenBalanceRequest[]> {
+  const tokenBalances: TokenBalanceRequest[] = [];
+  
+  // Ask if user wants to track token balances
+  const { trackTokenBalances } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'trackTokenBalances',
+      message: 'Do you want to track token balance updates?',
+      default: false
+    }
+  ]);
+
+  if (!trackTokenBalances) {
+    return [];
+  }
+
+  let addMore = true;
+  let balanceCount = 1;
+
+  while (addMore) {
+    console.log(`\n💰 Token Balance ${balanceCount}:`);
+    const tokenBalance = await askTokenBalanceDetails();
+    tokenBalances.push(tokenBalance);
+
+    const { continueAdding } = await inquirer.prompt([
       {
         type: 'confirm',
-        name: 'ci',
-        message: 'Would you like to include CI/CD configuration?',
+        name: 'continueAdding',
+        message: 'Do you want to add another token balance tracking configuration?',
         default: false
       }
     ]);
-    features.ci = ci;
+
+    addMore = continueAdding;
+    balanceCount++;
   }
 
-  // Ask about linting
-  const { linting } = await inquirer.prompt([
-    {
-      type: 'confirm',
-      name: 'linting',
-      message: 'Would you like to include linting and formatting?',
-      default: true
-    }
-  ]);
-  features.linting = linting;
-
-  return features;
+  return tokenBalances;
 }
 
 async function askConfirmation(config: SolanaPipeConfig): Promise<boolean> {
@@ -167,7 +167,7 @@ async function askConfirmation(config: SolanaPipeConfig): Promise<boolean> {
     {
       type: 'confirm',
       name: 'confirm',
-      message: 'Proceed with project generation?',
+      message: 'Proceed with indexer generation?',
       default: true
     }
   ]);
@@ -179,32 +179,19 @@ export async function runQuestionnaire(): Promise<SolanaPipeConfig> {
   // Step 1: Get basic project details
   const projectDetails = await askProjectDetails();
   
-  // Step 2: Ask about project type
-  const projectType = await askProjectType();
+  // Step 2: Ask about instructions to index
+  const instructions = await askInstructions();
   
-  // Step 3: Ask about framework (depends on project type)
-  const framework = await askFramework(projectType);
-  
-  // Step 4: Ask about network
-  const network = await askNetwork();
-  
-  // Step 5: Ask about features (depends on previous answers)
-  const context: QuestionContext = {
-    projectType,
-    framework,
-    network
-  };
-  const features = await askFeatures(context);
+  // Step 3: Ask about token balances to track
+  const tokenBalances = await askTokenBalances();
 
   // Build the complete config
   const config: SolanaPipeConfig = {
     projectName: projectDetails.projectName!,
     projectDescription: projectDetails.projectDescription!,
     author: projectDetails.author!,
-    projectType: projectType.toLowerCase().replace(/[^a-z]/g, '') as any,
-    framework: framework as any,
-    network: network.toLowerCase().replace(/[^a-z]/g, '') as any,
-    features
+    instructions: instructions.length > 0 ? instructions : undefined,
+    tokenBalances: tokenBalances.length > 0 ? tokenBalances : undefined
   };
 
   return config;
