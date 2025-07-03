@@ -1,0 +1,8 @@
+services:
+  clickhouse:
+    image: bitnami/clickhouse:latest
+    container_name: simple_pipe_clickhouse
+    ports:
+      - '8123:8123'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes

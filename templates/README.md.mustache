@@ -1,0 +1,54 @@
+# {{config.projectName}}
+
+{{config.projectDescription}}
+
+A Solana data pipe powered by Soldexer that indexes {{#config.instructions}}instructions{{/config.instructions}}{{#config.tokenBalances}}{{#config.instructions}} and {{/config.instructions}}token balances{{/config.tokenBalances}}.
+
+## Features
+
+{{#config.instructions}}
+- **Instruction Indexing**: Tracks instructions from specified programs
+{{#config.instructions}}
+  - Program IDs: {{#programId}}{{.}}{{^last}}, {{/last}}{{/programId}}{{^programId}}All{{/programId}}
+  - Discriminators: {{#discriminator}}{{.}}{{^last}}, {{/last}}{{/discriminator}}{{^discriminator}}All{{/discriminator}}
+{{/config.instructions}}
+{{/config.instructions}}
+
+{{#config.tokenBalances}}
+- **Token Balance Tracking**: Monitors token balance updates
+{{#config.tokenBalances}}
+  - Accounts: {{#account}}{{.}}{{^last}}, {{/last}}{{/account}}{{^account}}All{{/account}}
+  - Mints: {{#mint}}{{.}}{{^last}}, {{/last}}{{/mint}}{{^mint}}All{{/mint}}
+{{/config.tokenBalances}}
+{{/config.tokenBalances}}
+
+## Running the pipe
+
+```bash
+# Install dependencies
+yarn install --frozen-lockfile
+
+# Start ClickHouse
+docker compose up -d
+
+# Start the indexer
+yarn start
+```
+
+You can now visit the local [ClickHouse console](http://localhost:8123/play) and observe the data that the pipe produces.
+
+## Data Tables
+
+The indexer creates the following tables in ClickHouse:
+
+- `instructions_raw` - Raw instruction data
+- `token_balances_raw` - Token balance updates
+- `sync_status` - Indexer progress tracking
+
+## Author
+
+{{config.author}}
+
+## License
+
+MIT 

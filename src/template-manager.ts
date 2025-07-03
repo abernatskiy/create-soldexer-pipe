@@ -17,9 +17,38 @@ export class TemplateManager {
       timestamp: new Date().toISOString()
     };
 
-    // TODO: Implement indexer-specific template generation
-    console.log('Template generation not yet implemented');
-    console.log('Configuration received:', JSON.stringify(config, null, 2));
+    // Create project directory
+    const projectDir = path.join(process.cwd(), config.projectName);
+    await fs.ensureDir(projectDir);
+    
+    // Change to project directory for file generation
+    const originalCwd = process.cwd();
+    process.chdir(projectDir);
+
+    try {
+      // Generate root level files
+      await this.generateFile('package.json.mustache', 'package.json', templateData);
+      await this.generateFile('README.md.mustache', 'README.md', templateData);
+      await this.generateFile('tsconfig.json.mustache', 'tsconfig.json', templateData);
+      await this.generateFile('docker-compose.yml.mustache', 'docker-compose.yml', templateData);
+      await this.generateFile('.gitignore.mustache', '.gitignore', templateData);
+
+      // Generate src directory and files
+      await this.generateDirectory('src');
+      await this.generateFile('src/main.ts.mustache', 'src/main.ts', templateData);
+      await this.generateFile('src/database-setup.sql.mustache', 'src/database-setup.sql', templateData);
+      
+      // Copy static files
+      await this.copyStaticFile('src/clickhouse.ts', 'src/clickhouse.ts');
+      await this.copyStaticFile('src/logger.ts', 'src/logger.ts');
+
+      console.log(`✓ Generated Solana indexer project: ${config.projectName}`);
+      console.log(`✓ Project location: ${projectDir}`);
+      
+    } finally {
+      // Restore original working directory
+      process.chdir(originalCwd);
+    }
   }
 
   private async generateFile(templateName: string, outputName: string, data: any): Promise<void> {
@@ -33,6 +62,18 @@ export class TemplateManager {
       console.log(`✓ Generated ${outputName}`);
     } catch (error) {
       console.error(`✗ Failed to generate ${outputName}:`, error);
+    }
+  }
+
+  private async copyStaticFile(templateName: string, outputName: string): Promise<void> {
+    const templatePath = path.join(this.templatesDir, templateName);
+    const outputPath = path.join(process.cwd(), outputName);
+
+    try {
+      await fs.copyFile(templatePath, outputPath);
+      console.log(`✓ Copied ${outputName}`);
+    } catch (error) {
+      console.error(`✗ Failed to copy ${outputName}:`, error);
     }
   }
 

@@ -49,18 +49,21 @@ async function main(): Promise<void> {
       process.exit(0);
     }
 
-    // Generate project (disabled for now)
-    const spinner = ora('Processing your indexer configuration...').start();
+    // Generate project
+    const spinner = ora('Generating your Solana indexer project...').start();
     
-    // TODO: Implement template generation
-    // const templateManager = new TemplateManager();
-    // await templateManager.generateProject(config);
+    const templateManager = new TemplateManager();
+    await templateManager.generateProject(config);
     
-    spinner.succeed('Configuration processed successfully!');
+    spinner.succeed('Project generated successfully!');
 
     // Show next steps
-    console.log(chalk.green.bold('\n🎉 Your indexer configuration is ready!'));
-    console.log(chalk.white('\nConfiguration saved. Template generation will be implemented later.'));
+    console.log(chalk.green.bold('\n🎉 Your Solana indexer is ready!'));
+    console.log(chalk.white('\nNext steps:'));
+    console.log(chalk.cyan(`  1. cd ${config.projectName}`));
+    console.log(chalk.cyan('  2. yarn install --frozen-lockfile'));
+    console.log(chalk.cyan('  3. docker compose up -d'));
+    console.log(chalk.cyan('  4. yarn start'));
     console.log(chalk.gray('\nHappy indexing! 🚀\n'));
 
   } catch (error) {

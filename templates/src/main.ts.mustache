@@ -1,0 +1,259 @@
+import path from 'node:path';
+import { PortalAbstractStream } from '@sqd-pipes/core';
+import { createClickhouseClient, ensureTables } from './clickhouse';
+import { ClickhouseState } from '@sqd-pipes/core';
+import { createLogger } from './logger';
+
+{{#config.instructions}}
+// Instruction data types
+type InstructionData = {
+  timestamp: Date;
+  blockNumber: number;
+  blockHash: string;
+  transactionIndex: number;
+  instructionAddress: number;
+  programId: string;
+  accounts: string[];
+  data: string;
+  error: string | null;
+  computeUnitsConsumed: number;
+  isCommitted: boolean;
+  hasDroppedLogMessages: boolean;
+};
+
+// Stream for instruction data
+class InstructionsStream extends PortalAbstractStream<
+  InstructionData,
+  { instructions: any[]; }
+> {
+  async stream(): Promise<ReadableStream<InstructionData[]>> {
+    const source = await this.getStream({
+      type: 'solana',
+      fields: {
+        block: {
+          number: true,
+          hash: true,
+          timestamp: true,
+        },
+        instruction: {
+          transactionIndex: true,
+          instructionAddress: true,
+          programId: true,
+          accounts: true,
+          data: true,
+          error: true,
+          computeUnitsConsumed: true,
+          isCommitted: true,
+          hasDroppedLogMessages: true,
+        },
+      },
+      instructions: this.options.args.instructions
+    });
+
+    const stream = source.pipeThrough(
+      new TransformStream({
+        transform: ({ blocks }, controller) => {
+          const res = blocks.flatMap((block: any) => {
+            if (!block.instructions) return [];
+
+            const blockTimestamp = new Date(block.header.timestamp * 1000);
+
+            return block.instructions.map((instruction: any) => ({
+              timestamp: blockTimestamp,
+              blockNumber: block.header.number,
+              blockHash: block.header.hash,
+              transactionIndex: instruction.transactionIndex,
+              instructionAddress: instruction.instructionAddress,
+              programId: instruction.programId,
+              accounts: instruction.accounts,
+              data: instruction.data,
+              error: instruction.error,
+              computeUnitsConsumed: instruction.computeUnitsConsumed,
+              isCommitted: instruction.isCommitted,
+              hasDroppedLogMessages: instruction.hasDroppedLogMessages,
+            }));
+          });
+
+          controller.enqueue(res);
+        },
+      }),
+    );
+
+    return stream;
+  }
+}
+{{/config.instructions}}
+
+{{#config.tokenBalances}}
+// Token balance data types
+type TokenBalanceData = {
+  timestamp: Date;
+  blockNumber: number;
+  blockHash: string;
+  transactionIndex: number;
+  account: string;
+  preMint: string;
+  postMint: string;
+  preDecimals: number;
+  postDecimals: number;
+  preProgramId: string;
+  postProgramId: string;
+  preOwner: string;
+  postOwner: string;
+  preAmount: bigint;
+  postAmount: bigint;
+};
+
+// Stream for token balance data
+class TokenBalancesStream extends PortalAbstractStream<
+  TokenBalanceData,
+  { tokenBalances: any[]; }
+> {
+  async stream(): Promise<ReadableStream<TokenBalanceData[]>> {
+    const source = await this.getStream({
+      type: 'solana',
+      fields: {
+        block: {
+          number: true,
+          hash: true,
+          timestamp: true,
+        },
+        tokenBalance: {
+          transactionIndex: true,
+          account: true,
+          preMint: true,
+          postMint: true,
+          preDecimals: true,
+          postDecimals: true,
+          preProgramId: true,
+          postProgramId: true,
+          preOwner: true,
+          postOwner: true,
+          preAmount: true,
+          postAmount: true,
+        },
+      },
+      tokenBalances: this.options.args.tokenBalances
+    });
+
+    const stream = source.pipeThrough(
+      new TransformStream({
+        transform: ({ blocks }, controller) => {
+          const res = blocks.flatMap((block: any) => {
+            if (!block.tokenBalances) return [];
+
+            const blockTimestamp = new Date(block.header.timestamp * 1000);
+
+            return block.tokenBalances.map((tb: any) => ({
+              timestamp: blockTimestamp,
+              blockNumber: block.header.number,
+              blockHash: block.header.hash,
+              transactionIndex: tb.transactionIndex,
+              account: tb.account,
+              preMint: tb.preMint,
+              postMint: tb.postMint,
+              preDecimals: tb.preDecimals,
+              postDecimals: tb.postDecimals,
+              preProgramId: tb.preProgramId,
+              postProgramId: tb.postProgramId,
+              preOwner: tb.preOwner,
+              postOwner: tb.postOwner,
+              preAmount: tb.preAmount,
+              postAmount: tb.postAmount,
+            }));
+          });
+
+          controller.enqueue(res);
+        },
+      }),
+    );
+
+    return stream;
+  }
+}
+{{/config.tokenBalances}}
+
+async function main() {
+  const clickhouse = createClickhouseClient();
+
+  {{#config.instructions}}
+  // Setup instruction indexing
+  const instructionsStream = new InstructionsStream({
+    portal: 'https://portal.sqd.dev/datasets/solana-mainnet',
+    blockRange: {
+      from: 317617480, // Jan 31 2025
+    },
+    args: {
+      instructions: [
+        {{#config.instructions}}
+        {
+          {{#programId}}programId: [{{#programId}}'{{.}}'{{^last}}, {{/last}}{{/programId}}],{{/programId}}
+          {{#discriminator}}d1: [{{#discriminator}}'{{.}}'{{^last}}, {{/last}}{{/discriminator}}],{{/discriminator}}
+        }{{^last}},{{/last}}
+        {{/config.instructions}}
+      ]
+    },
+    state: new ClickhouseState(clickhouse, {
+      table: 'solana_sync_status',
+      id: 'instructions',
+    }),
+    logger: createLogger('instructions'),
+  });
+  {{/config.instructions}}
+
+  {{#config.tokenBalances}}
+  // Setup token balance tracking
+  const tokenBalancesStream = new TokenBalancesStream({
+    portal: 'https://portal.sqd.dev/datasets/solana-mainnet',
+    blockRange: {
+      from: 317617480, // Jan 31 2025
+    },
+    args: {
+      tokenBalances: [
+        {{#config.tokenBalances}}
+        {
+          {{#account}}account: [{{#account}}'{{.}}'{{^last}}, {{/last}}{{/account}}],{{/account}}
+          {{#mint}}preMint: [{{#mint}}'{{.}}'{{^last}}, {{/last}}{{/mint}}],{{/mint}}
+        }{{^last}},{{/last}}
+        {{/config.tokenBalances}}
+      ]
+    },
+    state: new ClickhouseState(clickhouse, {
+      table: 'solana_sync_status',
+      id: 'token_balances',
+    }),
+    logger: createLogger('token_balances'),
+  });
+  {{/config.tokenBalances}}
+
+  // Ensure that ClickHouse has the necessary tables
+  await ensureTables(clickhouse, path.join(__dirname, 'database-setup.sql'));
+
+  {{#config.instructions}}
+  // Process instruction data
+  for await (const instructions of await instructionsStream.stream()) {
+    await clickhouse.insert({
+      table: 'instructions_raw',
+      values: instructions,
+      format: 'JSONEachRow',
+    });
+
+    await instructionsStream.ack();
+  }
+  {{/config.instructions}}
+
+  {{#config.tokenBalances}}
+  // Process token balance data
+  for await (const tokenBalances of await tokenBalancesStream.stream()) {
+    await clickhouse.insert({
+      table: 'token_balances_raw',
+      values: tokenBalances,
+      format: 'JSONEachRow',
+    });
+
+    await tokenBalancesStream.ack();
+  }
+  {{/config.tokenBalances}}
+}
+
+void main(); 

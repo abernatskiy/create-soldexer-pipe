@@ -1,0 +1,79 @@
+{{#config.instructions}}
+-- Instructions table
+CREATE TABLE IF NOT EXISTS instructions_raw
+(
+  timestamp               DateTime CODEC (DoubleDelta, ZSTD),
+  blockNumber             UInt64,
+  blockHash               String,
+  transactionIndex        UInt32,
+  instructionAddress      UInt32,
+  programId               String,
+  accounts                Array(String),
+  data                    String,
+  error                   Nullable(String),
+  computeUnitsConsumed    UInt64,
+  isCommitted             Bool,
+  hasDroppedLogMessages   Bool
+) ENGINE = MergeTree()
+ORDER BY (timestamp, blockNumber, transactionIndex, instructionAddress);
+
+-- Instructions materialized view for analytics
+CREATE MATERIALIZED VIEW IF NOT EXISTS instructions_stats
+ENGINE = AggregatingMergeTree()
+ORDER BY (timestamp)
+AS
+SELECT
+  toStartOfHour(timestamp) as timestamp,
+  countState() AS instruction_count,
+  uniqState(programId) AS unique_programs,
+  uniqState(blockNumber) AS unique_blocks
+FROM instructions_raw
+GROUP BY timestamp;
+{{/config.instructions}}
+
+{{#config.tokenBalances}}
+-- Token balances table
+CREATE TABLE IF NOT EXISTS token_balances_raw
+(
+  timestamp           DateTime CODEC (DoubleDelta, ZSTD),
+  blockNumber         UInt64,
+  blockHash           String,
+  transactionIndex    UInt32,
+  account             String,
+  preMint             String,
+  postMint            String,
+  preDecimals         UInt8,
+  postDecimals        UInt8,
+  preProgramId        String,
+  postProgramId       String,
+  preOwner            String,
+  postOwner           String,
+  preAmount           UInt256,
+  postAmount          UInt256
+) ENGINE = MergeTree()
+ORDER BY (timestamp, blockNumber, transactionIndex, account);
+
+-- Token balances materialized view for analytics
+CREATE MATERIALIZED VIEW IF NOT EXISTS token_balance_stats
+ENGINE = AggregatingMergeTree()
+ORDER BY (timestamp)
+AS
+SELECT
+  toStartOfHour(timestamp) as timestamp,
+  countState() AS balance_update_count,
+  uniqState(account) AS unique_accounts,
+  uniqState(postMint) AS unique_mints,
+  avgState(toFloat64(postAmount) / pow(10, postDecimals)) AS avg_balance
+FROM token_balances_raw
+GROUP BY timestamp;
+{{/config.tokenBalances}}
+
+-- Sync status table for tracking indexer progress
+CREATE TABLE IF NOT EXISTS solana_sync_status
+(
+  id                   String,
+  highest_seen_block   UInt64,
+  worker_ranges        Array(Tuple(UInt64, UInt64)),
+  updated_at           DateTime DEFAULT now()
+) ENGINE = ReplacingMergeTree(updated_at)
+ORDER BY (id); 
