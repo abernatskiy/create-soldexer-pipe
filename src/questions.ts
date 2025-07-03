@@ -95,16 +95,6 @@ async function askInstructions(): Promise<InstructionRequest[]> {
 }
 
 async function askTokenBalanceDetails(): Promise<TokenBalanceRequest> {
-  const { account } = await inquirer.prompt([
-    {
-      type: 'input',
-      name: 'account',
-      message: 'Enter account addresses to track (comma-separated):',
-      default: '',
-      filter: (input: string) => input.split(',').map(acc => acc.trim()).filter(acc => acc.length > 0)
-    }
-  ]);
-
   const { mint } = await inquirer.prompt([
     {
       type: 'input',
@@ -112,6 +102,16 @@ async function askTokenBalanceDetails(): Promise<TokenBalanceRequest> {
       message: 'Enter token mint addresses to track (comma-separated, leave empty for all):',
       default: '',
       filter: (input: string) => input.split(',').map(m => m.trim()).filter(m => m.length > 0)
+    }
+  ]);
+
+  const { account } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'account',
+      message: 'Enter account addresses to track (comma-separated, leave empty for all):',
+      default: '',
+      filter: (input: string) => input.split(',').map(acc => acc.trim()).filter(acc => acc.length > 0)
     }
   ]);
 
