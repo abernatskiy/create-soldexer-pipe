@@ -79,7 +79,10 @@ process.on('unhandledRejection', (reason, promise) => {
   process.exit(1);
 });
 
-// Run the CLI
+// Export main function for direct execution
+export { main };
+
+// Run the CLI if this is the main module
 if (require.main === module) {
   main();
 } 
