@@ -1,6 +1,6 @@
 {
   "name": "create-soldexer-pipe",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Interactive CLI tool to create Solana development environments with customizable configurations",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
@@ -40,6 +40,7 @@
   "files": [
     "lib/**/*",
     "bin/**/*",
+    "src/**/*",
     "templates/**/*"
   ]
 } 
